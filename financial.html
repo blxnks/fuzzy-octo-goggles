@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monthly Financial Planner</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .slide-up {
+            animation: slideUp 0.3s ease-out forwards;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen py-8 px-4 sm:px-6">
+
+    <div class="max-w-5xl mx-auto space-y-6">
+        
+        <!-- Header & Navigation -->
+        <header class="flex flex-col sm:flex-row items-center justify-between gap-4 pb-2 border-b border-gray-800">
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+                    <span class="p-2 bg-blue-600/20 text-blue-400 rounded-lg">📊</span> Monthly Financial Planner
+                </h1>
+            </div>
+
+            <!-- Month Selector -->
+            <div class="flex items-center gap-2 bg-gray-800/80 p-1.5 rounded-xl border border-gray-700 shadow-sm">
+                <button id="prev-month" class="px-3 py-1.5 bg-gray-700/60 hover:bg-gray-600 active:scale-95 rounded-lg text-sm font-semibold transition">
+                    &larr;
+                </button>
+                <span id="current-month-label" class="text-sm font-bold text-blue-400 min-w-[130px] text-center">---</span>
+                <button id="next-month" class="px-3 py-1.5 bg-gray-700/60 hover:bg-gray-600 active:scale-95 rounded-lg text-sm font-semibold transition">
+                    &rarr;
+                </button>
+            </div>
+        </header>
+
+        <!-- Dynamic Overview Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="bg-gray-800/90 p-5 rounded-xl border border-gray-700/80 shadow-md relative overflow-hidden">
+                <div class="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-1">Total Income</div>
+                <div id="total-income" class="text-3xl font-extrabold text-emerald-400">$0.00</div>
+            </div>
+
+            <div class="bg-gray-800/90 p-5 rounded-xl border border-gray-700/80 shadow-md relative overflow-hidden">
+                <div class="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-1">Planned Expenses</div>
+                <div id="total-expenses" class="text-3xl font-extrabold text-rose-400">$0.00</div>
+            </div>
+
+            <div class="bg-gray-800/90 p-5 rounded-xl border border-gray-700/80 shadow-md relative overflow-hidden">
+                <div class="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-1">Remaining Balance</div>
+                <div id="remaining-balance" class="text-3xl font-extrabold text-blue-400">$0.00</div>
+            </div>
+        </div>
+
+        <!-- Smart Recommendation Banner (Revealed after Income Entry or Auto-Detected) -->
+        <div id="smart-recommendation-card" class="hidden slide-up bg-gradient-to-r from-indigo-900/40 via-purple-900/30 to-gray-800 border border-indigo-500/40 p-5 rounded-xl shadow-lg space-y-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="text-xl">✨</span>
+                    <h3 class="font-bold text-indigo-200 text-base">Smart Expense Suggestions Ready</h3>
+                </div>
+                <button id="apply-all-suggestions" class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg transition shadow-md hover:scale-105 active:scale-95">
+                    Apply All Suggestions
+                </button>
+            </div>
+            
+            <div id="suggestions-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-2">
+                <!-- Dynamically Inserted Suggestion Cards -->
+            </div>
+        </div>
+
+        <!-- Forms & Lists Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+            <!-- Income Section -->
+            <div class="space-y-4">
+                <!-- Add Income Form -->
+                <div class="bg-gray-800/80 p-5 rounded-xl border border-gray-700 shadow-md">
+                    <h2 class="text-base font-bold text-white mb-3 flex items-center justify-between">
+                        <span>+ Add Income / Paycheck</span>
+                    </h2>
+                    <form id="income-form" class="grid grid-cols-1 sm:grid-cols-5 gap-3">
+                        <div class="sm:col-span-3">
+                            <input type="text" id="income-name" placeholder="Source (e.g. Paycheck)" required
+                                class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <input type="number" id="income-amount" placeholder="0.00" step="0.01" required
+                                class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                        </div>
+                        <button type="submit" 
+                            class="sm:col-span-5 w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2 rounded-lg transition duration-200 shadow hover:shadow-emerald-900/50">
+                            Add Paycheck
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Income Table -->
+                <div class="bg-gray-800/80 rounded-xl border border-gray-700 overflow-hidden shadow-md flex flex-col">
+                    <div class="px-5 py-3 border-b border-gray-700 flex justify-between items-center bg-gray-800">
+                        <h2 class="text-sm font-bold text-white">Income Breakdown</h2>
+                        <button id="clear-income" class="text-xs text-rose-400 hover:text-rose-300 font-medium transition">Clear</button>
+                    </div>
+                    <div class="overflow-x-auto min-h-[160px]">
+                        <table class="w-full text-left text-sm text-gray-300">
+                            <thead class="bg-gray-900/60 text-xs uppercase tracking-wider text-gray-400">
+                                <tr>
+                                    <th class="px-4 py-2.5">Source</th>
+                                    <th class="px-4 py-2.5">Amount</th>
+                                    <th class="px-4 py-2.5 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="income-list" class="divide-y divide-gray-700/60">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Expense Section -->
+            <div class="space-y-4">
+                <!-- Add Expense Form -->
+                <div class="bg-gray-800/80 p-5 rounded-xl border border-gray-700 shadow-md">
+                    <h2 class="text-base font-bold text-white mb-3 flex items-center justify-between">
+                        <span>+ Add Expense</span>
+                    </h2>
+                    <form id="expense-form" class="grid grid-cols-1 sm:grid-cols-5 gap-3">
+                        <div class="sm:col-span-3">
+                            <input type="text" id="expense-name" placeholder="Name (e.g. Rent, Gas)" required
+                                class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <input type="number" id="expense-amount" placeholder="0.00" step="0.01" required
+                                class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
+                        </div>
+                        <button type="submit" 
+                            class="sm:col-span-5 w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 rounded-lg transition duration-200 shadow hover:shadow-blue-900/50">
+                            Add Expense
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Expense Table -->
+                <div class="bg-gray-800/80 rounded-xl border border-gray-700 overflow-hidden shadow-md flex flex-col">
+                    <div class="px-5 py-3 border-b border-gray-700 flex justify-between items-center bg-gray-800">
+                        <h2 class="text-sm font-bold text-white">Expense Breakdown</h2>
+                        <button id="clear-expenses" class="text-xs text-rose-400 hover:text-rose-300 font-medium transition">Clear</button>
+                    </div>
+                    <div class="overflow-x-auto min-h-[160px]">
+                        <table class="w-full text-left text-sm text-gray-300">
+                            <thead class="bg-gray-900/60 text-xs uppercase tracking-wider text-gray-400">
+                                <tr>
+                                    <th class="px-4 py-2.5">Expense</th>
+                                    <th class="px-4 py-2.5">Amount</th>
+                                    <th class="px-4 py-2.5 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="expense-list" class="divide-y divide-gray-700/60">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Custom Modal Dialog (Replaces alert/confirm) -->
+    <div id="custom-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-gray-800 border border-gray-700 rounded-xl p-6 max-w-sm w-full space-y-4 shadow-2xl slide-up">
+            <h3 id="modal-title" class="text-lg font-bold text-white">Confirmation</h3>
+            <p id="modal-message" class="text-sm text-gray-300"></p>
+            <div class="flex justify-end gap-3 pt-2">
+                <button id="modal-cancel-btn" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 text-xs font-semibold rounded-lg transition">Cancel</button>
+                <button id="modal-confirm-btn" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-lg transition">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Logic -->
+    <script>
+        // State variables
+        let currentDate = new Date();
+        let currentYear = currentDate.getFullYear();
+        let currentMonth = currentDate.getMonth();
+
+        // Planner store in localStorage
+        let plannerData = JSON.parse(localStorage.getItem('planner_data')) || {};
+        let generatedSuggestions = [];
+
+        // Formatting Helpers
+        function getMonthKey(year, month) {
+            const m = (month + 1).toString().padStart(2, '0');
+            return `${year}-${m}`;
+        }
+
+        function getMonthLabel(year, month) {
+            const d = new Date(year, month, 1);
+            return d.toLocaleString('default', { month: 'long', year: 'numeric' });
+        }
+
+        function formatCurrency(val) {
+            return '$' + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        // DOM Elements
+        const currentMonthLabelEl = document.getElementById('current-month-label');
+        const prevMonthBtn = document.getElementById('prev-month');
+        const nextMonthBtn = document.getElementById('next-month');
+
+        const totalIncomeEl = document.getElementById('total-income');
+        const totalExpensesEl = document.getElementById('total-expenses');
+        const remainingBalanceEl = document.getElementById('remaining-balance');
+
+        const incomeForm = document.getElementById('income-form');
+        const incomeNameInput = document.getElementById('income-name');
+        const incomeAmountInput = document.getElementById('income-amount');
+        const incomeListEl = document.getElementById('income-list');
+        const clearIncomeBtn = document.getElementById('clear-income');
+
+        const expenseForm = document.getElementById('expense-form');
+        const expenseNameInput = document.getElementById('expense-name');
+        const expenseAmountInput = document.getElementById('expense-amount');
+        const expenseListEl = document.getElementById('expense-list');
+        const clearExpensesBtn = document.getElementById('clear-expenses');
+
+        const smartCard = document.getElementById('smart-recommendation-card');
+        const suggestionsListEl = document.getElementById('suggestions-list');
+        const applyAllBtn = document.getElementById('apply-all-suggestions');
+
+        // Modal Elements
+        const modal = document.getElementById('custom-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalMessage = document.getElementById('modal-message');
+        const modalConfirmBtn = document.getElementById('modal-confirm-btn');
+        const modalCancelBtn = document.getElementById('modal-cancel-btn');
+        let modalActionHandler = null;
+
+        function showModal(title, message, onConfirm, showCancel = true) {
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+            modalActionHandler = onConfirm;
+            modalCancelBtn.style.display = showCancel ? 'inline-block' : 'none';
+            modal.classList.remove('hidden');
+        }
+
+        modalCancelBtn.addEventListener('click', () => modal.classList.add('hidden'));
+        modalConfirmBtn.addEventListener('click', () => {
+            modal.classList.add('hidden');
+            if (modalActionHandler) modalActionHandler();
+        });
+
+        // Ensure current active month exists
+        function getActiveMonthData() {
+            const key = getMonthKey(currentYear, currentMonth);
+            if (!plannerData[key]) {
+                plannerData[key] = { incomes: [], expenses: [] };
+            }
+            return plannerData[key];
+        }
+
+        function init() {
+            updateMonthUI();
+        }
+
+        function updateMonthUI() {
+            currentMonthLabelEl.textContent = getMonthLabel(currentYear, currentMonth);
+            renderIncomes();
+            renderExpenses();
+            updateCalculations();
+            evaluateSmartSuggestions();
+        }
+
+        // Calculation of smart recommendations (from history or standard budget ratios)
+        function generateSuggestions() {
+            const data = getActiveMonthData();
+            const totalIncome = data.incomes.reduce((sum, item) => sum + item.amount, 0);
+            if (totalIncome <= 0) return [];
+
+            const historicalExpensesByName = {};
+            const historicalCountsByName = {};
+
+            // Aggregate historical entries
+            Object.keys(plannerData).forEach(k => {
+                const month = plannerData[k];
+                if (month.expenses) {
+                    month.expenses.forEach(e => {
+                        const nameKey = e.name.toLowerCase().trim();
+                        historicalExpensesByName[nameKey] = (historicalExpensesByName[nameKey] || 0) + e.amount;
+                        historicalCountsByName[nameKey] = (historicalCountsByName[nameKey] || 0) + 1;
+                    });
+                }
+            });
+
+            const currentExpenseNames = new Set(data.expenses.map(e => e.name.toLowerCase().trim()));
+            let suggestions = [];
+
+            // Method 1: Use Historical Averages if present
+            Object.keys(historicalExpensesByName).forEach(nameKey => {
+                if (!currentExpenseNames.has(nameKey)) {
+                    const originalName = nameKey.charAt(0).toUpperCase() + nameKey.slice(1);
+                    const avg = historicalExpensesByName[nameKey] / historicalCountsByName[nameKey];
+                    suggestions.push({
+                        name: originalName,
+                        amount: Math.round(avg * 100) / 100,
+                        tag: 'Historical Avg'
+                    });
+                }
+            });
+
+            // Method 2: Fallback Standard Rule Suggestions (50/30/20 Rule) if no historical suggestions match
+            if (suggestions.length === 0) {
+                const ruleBased = [
+                    { name: 'Housing & Utilities (50%)', amount: Math.round(totalIncome * 0.35 * 100) / 100, tag: 'Recommended' },
+                    { name: 'Groceries & Food', amount: Math.round(totalIncome * 0.15 * 100) / 100, tag: 'Recommended' },
+                    { name: 'Savings / Investment (20%)', amount: Math.round(totalIncome * 0.20 * 100) / 100, tag: 'Recommended' }
+                ];
+
+                ruleBased.forEach(r => {
+                    if (!currentExpenseNames.has(r.name.toLowerCase().trim())) {
+                        suggestions.push(r);
+                    }
+                });
+            }
+
+            return suggestions;
+        }
+
+        function evaluateSmartSuggestions() {
+            generatedSuggestions = generateSuggestions();
+            if (generatedSuggestions.length > 0) {
+                renderSuggestionsUI();
+                smartCard.classList.remove('hidden');
+            } else {
+                smartCard.classList.add('hidden');
+            }
+        }
+
+        function renderSuggestionsUI() {
+            suggestionsListEl.innerHTML = '';
+            generatedSuggestions.forEach((sugg, idx) => {
+                const div = document.createElement('div');
+                div.className = 'bg-gray-800/90 border border-gray-700 p-3 rounded-lg flex flex-col justify-between space-y-2';
+                div.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold text-gray-200 truncate">${escapeHtml(sugg.name)}</span>
+                        <span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded font-medium">${sugg.tag}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm font-bold text-emerald-400">${formatCurrency(sugg.amount)}</span>
+                        <button onclick="addSingleSuggestion(${idx})" class="px-2 py-1 bg-gray-700 hover:bg-emerald-600 text-white text-xs font-medium rounded transition">
+                            + Add
+                        </button>
+                    </div>
+                `;
+                suggestionsListEl.appendChild(div);
+            });
+        }
+
+        function addSingleSuggestion(idx) {
+            const item = generatedSuggestions[idx];
+            if (!item) return;
+
+            const data = getActiveMonthData();
+            data.expenses.push({ id: Date.now(), name: item.name, amount: item.amount });
+            saveData();
+            updateMonthUI();
+        }
+
+        applyAllBtn.addEventListener('click', () => {
+            if (generatedSuggestions.length === 0) return;
+            const data = getActiveMonthData();
+            generatedSuggestions.forEach((sugg, i) => {
+                data.expenses.push({ id: Date.now() + i, name: sugg.name, amount: sugg.amount });
+            });
+            saveData();
+            updateMonthUI();
+        });
+
+        // Render Incomes
+        function renderIncomes() {
+            const data = getActiveMonthData();
+            incomeListEl.innerHTML = '';
+            if (data.incomes.length === 0) {
+                incomeListEl.innerHTML = `<tr><td colspan="3" class="px-4 py-8 text-center text-gray-500 text-xs">No income added for this month.</td></tr>`;
+                return;
+            }
+            data.incomes.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-700/20 transition';
+                tr.innerHTML = `
+                    <td class="px-4 py-2.5 font-medium text-white">${escapeHtml(item.name)}</td>
+                    <td class="px-4 py-2.5 text-emerald-400 font-semibold">${formatCurrency(item.amount)}</td>
+                    <td class="px-4 py-2.5 text-right">
+                        <button onclick="removeIncome(${item.id})" class="text-rose-400 hover:text-rose-300 text-xs font-medium">Delete</button>
+                    </td>
+                `;
+                incomeListEl.appendChild(tr);
+            });
+        }
+
+        // Render Expenses
+        function renderExpenses() {
+            const data = getActiveMonthData();
+            expenseListEl.innerHTML = '';
+            if (data.expenses.length === 0) {
+                expenseListEl.innerHTML = `<tr><td colspan="3" class="px-4 py-8 text-center text-gray-500 text-xs">No expenses added for this month.</td></tr>`;
+                return;
+            }
+            data.expenses.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-700/20 transition';
+                tr.innerHTML = `
+                    <td class="px-4 py-2.5 font-medium text-white">${escapeHtml(item.name)}</td>
+                    <td class="px-4 py-2.5 text-rose-400 font-semibold">${formatCurrency(item.amount)}</td>
+                    <td class="px-4 py-2.5 text-right">
+                        <button onclick="removeExpense(${item.id})" class="text-rose-400 hover:text-rose-300 text-xs font-medium">Delete</button>
+                    </td>
+                `;
+                expenseListEl.appendChild(tr);
+            });
+        }
+
+        // Calculations
+        function updateCalculations() {
+            const data = getActiveMonthData();
+            const totalIncome = data.incomes.reduce((sum, item) => sum + item.amount, 0);
+            const totalExpenses = data.expenses.reduce((sum, item) => sum + item.amount, 0);
+            const remaining = totalIncome - totalExpenses;
+
+            totalIncomeEl.textContent = formatCurrency(totalIncome);
+            totalExpensesEl.textContent = formatCurrency(totalExpenses);
+            remainingBalanceEl.textContent = formatCurrency(remaining);
+
+            if (remaining < 0) {
+                remainingBalanceEl.className = 'text-3xl font-extrabold text-rose-500';
+            } else {
+                remainingBalanceEl.className = 'text-3xl font-extrabold text-blue-400';
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem('planner_data', JSON.stringify(plannerData));
+        }
+
+        // Navigation
+        prevMonthBtn.addEventListener('click', () => {
+            currentMonth--;
+            if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            }
+            updateMonthUI();
+        });
+
+        nextMonthBtn.addEventListener('click', () => {
+            currentMonth++;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+            updateMonthUI();
+        });
+
+        // Add Income Trigger
+        incomeForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = incomeNameInput.value.trim();
+            const amount = parseFloat(incomeAmountInput.value) || 0;
+
+            if (name && !isNaN(amount) && amount > 0) {
+                const data = getActiveMonthData();
+                data.incomes.push({ id: Date.now(), name, amount });
+                saveData();
+                updateMonthUI();
+
+                incomeNameInput.value = '';
+                incomeAmountInput.value = '';
+                incomeNameInput.focus();
+            }
+        });
+
+        function removeIncome(id) {
+            const data = getActiveMonthData();
+            data.incomes = data.incomes.filter(item => item.id !== id);
+            saveData();
+            updateMonthUI();
+        }
+
+        clearIncomeBtn.addEventListener('click', () => {
+            showModal('Clear Incomes', 'Are you sure you want to remove all income entries for this month?', () => {
+                const data = getActiveMonthData();
+                data.incomes = [];
+                saveData();
+                updateMonthUI();
+            });
+        });
+
+        // Add Expense Trigger
+        expenseForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = expenseNameInput.value.trim();
+            const amount = parseFloat(expenseAmountInput.value) || 0;
+
+            if (name && !isNaN(amount) && amount > 0) {
+                const data = getActiveMonthData();
+                data.expenses.push({ id: Date.now(), name, amount });
+                saveData();
+                updateMonthUI();
+
+                expenseNameInput.value = '';
+                expenseAmountInput.value = '';
+                expenseNameInput.focus();
+            }
+        });
+
+        function removeExpense(id) {
+            const data = getActiveMonthData();
+            data.expenses = data.expenses.filter(item => item.id !== id);
+            saveData();
+            updateMonthUI();
+        }
+
+        clearExpensesBtn.addEventListener('click', () => {
+            showModal('Clear Expenses', 'Are you sure you want to remove all expense entries for this month?', () => {
+                const data = getActiveMonthData();
+                data.expenses = [];
+                saveData();
+                updateMonthUI();
+            });
+        });
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        // Initialize application on load
+        init();
+    </script>
+</body>
+</html>
